@@ -1,0 +1,19 @@
+{
+  "name": "competitive-intelligence",
+  "version": "1.0.0",
+  "description": "Analyze competitor creators and benchmark performance. Track market share, content strategies, and growth patterns.",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "author": "Creator Fusion",
+  "license": "MIT",
+  "dependencies": {
+    "apify": "^3.1.0",
+    "apify-client": "^2.9.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

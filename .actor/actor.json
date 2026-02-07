@@ -1,0 +1,30 @@
+{
+    "actorSpecification": 1,
+    "name": "competitive-intelligence",
+    "title": "Competitive Intelligence",
+    "description": "Analyze competitor creators and benchmark performance. Track market share, content strategies, and growth patterns.",
+    "version": "1.0",
+    "buildTag": "latest",
+    "input": "./input_schema.json",
+    "dockerfile": "./Dockerfile",
+    "readme": "../README.md",
+    "storages": {
+        "dataset": {
+            "actorSpecification": 1,
+            "title": "Competitive Analysis",
+            "views": {
+                "overview": {
+                    "title": "Analysis Overview",
+                    "transformation": {
+                        "fields": [
+                            "type",
+                            "summary.totalCreators",
+                            "highlights.marketLeader.username",
+                            "highlights.fastestGrowing.username"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

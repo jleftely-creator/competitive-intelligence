@@ -1,0 +1,40 @@
+{
+    "title": "Competitive Intelligence Input",
+    "description": "Configure competitive analysis",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "mode": {
+            "title": "Analysis Mode",
+            "description": "landscape: analyze all creators as competitors. benchmark: compare one target against competitors.",
+            "type": "string",
+            "enum": ["landscape", "benchmark"],
+            "default": "landscape"
+        },
+        "tiktokUsernames": {
+            "title": "TikTok Usernames (Landscape Mode)",
+            "description": "Creators to analyze for competitive landscape (min 2)",
+            "type": "array",
+            "editor": "stringList",
+            "items": { "type": "string" }
+        },
+        "targetUsername": {
+            "title": "Target Username (Benchmark Mode)",
+            "description": "The creator to benchmark",
+            "type": "string"
+        },
+        "competitorUsernames": {
+            "title": "Competitor Usernames (Benchmark Mode)",
+            "description": "Competitors to benchmark against",
+            "type": "array",
+            "editor": "stringList",
+            "items": { "type": "string" }
+        },
+        "fetchProfiles": {
+            "title": "Fetch Profiles",
+            "description": "Fetch TikTok profiles automatically",
+            "type": "boolean",
+            "default": true
+        }
+    }
+}
