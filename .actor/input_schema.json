@@ -21,7 +21,8 @@
         "targetUsername": {
             "title": "Target Username (Benchmark Mode)",
             "description": "The creator to benchmark",
-            "type": "string"
+            "type": "string",
+            "editor": "textfield"
         },
         "competitorUsernames": {
             "title": "Competitor Usernames (Benchmark Mode)",
