@@ -1,11 +1,59 @@
 /**
  * Competitive Intelligence Analyzer
- * 
+ *
  * Benchmark creators against each other and analyze competitive landscape.
+ *
+ * IMPORTANT LIMITATIONS:
+ * - Market share is based on FOLLOWER COUNT, not reach or actual audience size
+ * - Growth projections assume LINEAR growth (does NOT account for algorithm changes)
+ * - Cap projections at 2 years maximum
+ * - Reach-based market share analysis not available (followers ≠ reach)
+ *
+ * All benchmarks are 2024-2025 estimates. Verify quarterly.
+ * Last verified: February 2025
  */
 
 /**
+ * Validate creator data for competitive analysis
+ *
+ * @param {Object} creator - Creator profile
+ * @returns {Object} {isValid: boolean, errors: string[]}
+ */
+function validateCreatorForAnalysis(creator) {
+    const errors = [];
+
+    if (!creator) {
+        errors.push('Creator is null/undefined');
+        return { isValid: false, errors };
+    }
+
+    if (typeof creator.followers === 'number' && creator.followers < 0) {
+        errors.push('Followers cannot be negative');
+    }
+
+    if (typeof creator.likes === 'number' && creator.likes < 0) {
+        errors.push('Likes cannot be negative');
+    }
+
+    if (typeof creator.videos === 'number' && creator.videos < 0) {
+        errors.push('Video count cannot be negative');
+    }
+
+    if (typeof creator.accountAgeDays === 'number' && creator.accountAgeDays < 0) {
+        errors.push('Account age cannot be negative');
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors,
+    };
+}
+
+/**
  * Build competitive landscape analysis
+ *
+ * @param {Array} creators - Array of creator profiles
+ * @returns {Object} Landscape analysis with rankings, highlights, and insights
  */
 export function analyzeCompetitiveLandscape(creators) {
     if (creators.length < 2) {
@@ -18,17 +66,23 @@ export function analyzeCompetitiveLandscape(creators) {
     
     // Build individual analyses with market share
     const competitorAnalysis = creators.map(creator => {
+        // Validate creator data
+        const validation = validateCreatorForAnalysis(creator);
+        if (!validation.isValid) {
+            console.warn(`⚠️ Data validation issues for @${creator.username}: ${validation.errors.join('; ')}`);
+        }
+
         const followers = creator.followers || 0;
         const likes = creator.likes || 0;
         const engagementRate = creator.engagementRate || 0;
         const videos = creator.videos || 0;
         const accountAgeDays = creator.accountAgeDays || 365;
-        
+
         return {
             username: creator.username,
             nickname: creator.nickname,
             verified: creator.verified,
-            
+
             // Core metrics
             metrics: {
                 followers,
@@ -37,11 +91,13 @@ export function analyzeCompetitiveLandscape(creators) {
                 engagementRate: Math.round(engagementRate * 100) / 100,
                 accountAgeDays,
             },
-            
-            // Market share
+
+            // Market share (FOLLOWER-BASED, not reach-based)
+            // IMPORTANT: This reflects follower distribution, not actual audience reach
+            // Reach varies significantly based on engagement, algorithm, content type, etc.
             marketShare: {
-                followers: Math.round((followers / totalFollowers) * 10000) / 100,
-                likes: Math.round((likes / totalLikes) * 10000) / 100,
+                followers: totalFollowers > 0 ? Math.round((followers / totalFollowers) * 10000) / 100 : 0,
+                likes: totalLikes > 0 ? Math.round((likes / totalLikes) * 10000) / 100 : 0,
             },
             
             // Growth velocity
@@ -159,6 +215,7 @@ export function benchmarkCreator(target, competitors) {
     const gapToLeader = leader.username === target.username ? 0 : {
         followers: leader.metrics.followers - targetAnalysis.metrics.followers,
         percentage: Math.round(((leader.metrics.followers - targetAnalysis.metrics.followers) / leader.metrics.followers) * 100),
+        disclaimer: 'Gap based on current follower count - actual market reach differs based on engagement and algorithm',
     };
     
     // Generate recommendations
@@ -287,8 +344,9 @@ function generateInsights(competitors, leader, challenger, fastestGrowing, highe
     if (fastestGrowing.growth.followersPerMonth > avgGrowth * 2) {
         insights.push({
             type: 'growth_outlier',
-            message: `@${fastestGrowing.username} is growing 2x faster than average`,
+            message: `@${fastestGrowing.username} is growing 2x faster than average (${fastestGrowing.growth.followersPerMonth.toLocaleString()}/month)`,
             severity: 'info',
+            disclaimer: 'Growth extrapolation assumes linear trend - algorithm changes or viral moments can significantly alter this',
         });
     }
     
@@ -340,26 +398,39 @@ function generateBenchmarkRecommendations(target, competitors, leader) {
         });
     }
     
-    // Growth velocity
+    // Growth velocity and time to leader (with safety checks)
     if (target.username !== leader.username) {
-        const monthsToLeader = Math.round(
-            (leader.metrics.followers - target.metrics.followers) / 
-            Math.max(target.growth.followersPerMonth - leader.growth.followersPerMonth, 1000)
-        );
-        
-        if (target.growth.followersPerMonth > leader.growth.followersPerMonth) {
+        // Safe calculation: prevent division by zero
+        const followerGap = leader.metrics.followers - target.metrics.followers;
+        const growthDifference = target.growth.followersPerMonth - leader.growth.followersPerMonth;
+
+        // Only calculate if growth difference is meaningful and positive
+        let monthsToLeader = null;
+        let canOvertake = false;
+
+        if (growthDifference > 100) {
+            // Target is growing faster than leader
+            monthsToLeader = Math.round(followerGap / growthDifference);
+            // Cap projection at 24 months (beyond that, algorithm changes are likely)
+            monthsToLeader = Math.min(monthsToLeader, 24);
+            canOvertake = true;
+        }
+
+        if (canOvertake && monthsToLeader !== null) {
             recommendations.push({
                 category: 'Growth',
                 priority: 'low',
                 action: `Maintain growth velocity - on track to overtake leader in ~${monthsToLeader} months`,
-                impact: 'Market leadership potential',
+                impact: 'Market leadership potential (if growth trend continues)',
+                disclaimer: 'Assumes linear growth - algorithm changes or viral moments can alter timeline',
             });
         } else {
             recommendations.push({
                 category: 'Growth',
                 priority: 'high',
-                action: `Increase growth rate to close gap with leader`,
-                impact: `Currently ${((leader.metrics.followers - target.metrics.followers) / 1000000).toFixed(1)}M followers behind`,
+                action: `Increase growth rate to close ${Math.round(followerGap / 1000000 * 10) / 10}M follower gap with leader`,
+                impact: `Currently ${target.growth.followersPerMonth.toLocaleString()} followers/month (leader: ${leader.growth.followersPerMonth.toLocaleString()})`,
+                disclaimer: 'Growth projections assume linear extrapolation - platform dynamics may vary significantly',
             });
         }
     }
